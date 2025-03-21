@@ -76,7 +76,7 @@ export default function DigiBankerManager() {
   // Function to connect with the backend API
   const sendMessageToBackend = async () => {
     if (input.trim() === "" && attachments.length === 0 && !stream) return;
-    
+  
     // Add user message to chat
     const userMessage = {
       id: Date.now().toString(),
@@ -84,87 +84,110 @@ export default function DigiBankerManager() {
       content: input || "Sent attachments",
       timestamp: new Date(),
     };
-    
-    setMessages(prev => [...prev, userMessage]);
+  
+    setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
-    
+  
     try {
       const formData = new FormData();
       formData.append("session_id", sessionId);
       formData.append("user_id", userId || "default-user-id"); // Use stored userId or default
-      
+  
       if (input.trim() !== "") {
         formData.append("text", input);
       }
-      
+  
       // Add any image attachments
-      attachments.forEach(file => {
-        if (file.type.startsWith('image/')) {
+      attachments.forEach((file) => {
+        if (file.type.startsWith("image/")) {
           formData.append("images", file);
         }
       });
-      
+  
+      // Log the FormData for debugging
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+  
       // Add video if camera is active
       if (stream && userVideoRef.current) {
         // Capture frame from video as a blob
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         canvas.width = userVideoRef.current.videoWidth;
         canvas.height = userVideoRef.current.videoHeight;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
         ctx.drawImage(userVideoRef.current, 0, 0);
-        
+  
         // Convert canvas to blob
         canvas.toBlob(async (blob) => {
-          const videoFile = new File([blob], "video-capture.jpg", { type: 'image/jpeg' });
+          const videoFile = new File([blob], "video-capture.jpg", {
+            type: "image/jpeg",
+          });
           formData.append("video", videoFile);
-          
+  
           await completeRequest(formData);
-        }, 'image/jpeg');
+        }, "image/jpeg");
       } else {
         await completeRequest(formData);
       }
     } catch (error) {
       console.error("Error communicating with backend:", error);
-      handleAssistantResponse("I'm having trouble connecting to the server. Please try again later.");
+      handleAssistantResponse(
+        "I'm having trouble connecting to the server. Please try again later."
+      );
       setIsLoading(false);
     }
-    
+  
     // Clear input and attachments after sending
     setInput("");
     setAttachments([]);
   };
-
+  
   // Helper function to complete the API request
   const completeRequest = async (formData) => {
     try {
-      const response = await axios.post('http://localhost:8000/chat', formData, {
+      const response = await axios.post("http://127.0.0.1:5000/chat", formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+          "Content-Type": "multipart/form-data",
+        },
       });
-      
+  
+      // Log the response for debugging
+      console.log("Backend Response:", response.data);
+  
       // Handle the response
       const data = response.data.data;
-      
+  
       // Store userId if returned and not already set
       if (data.user_id && !userId) {
         setUserId(data.user_id);
       }
-      
+  
       // Add assistant response to chat
       if (data.agent_response) {
         handleAssistantResponse(data.agent_response);
       } else if (!data.approved) {
-        handleAssistantResponse("Face verification failed. Please try again with a clearer image.");
+        handleAssistantResponse(
+          "Face verification failed. Please try again with a clearer image."
+        );
+      }
+  
+      // Redirect based on success or failure
+      if (data.success) {
+        window.location.href = "/success"; // Redirect to success page
+      } else {
+        window.location.href = "/failure"; // Redirect to failure page
       }
     } catch (error) {
       console.error("Error in API request:", error);
-      handleAssistantResponse("I encountered an error processing your request. Please try again.");
+      handleAssistantResponse(
+        "I encountered an error processing your request. Please try again."
+      );
+      window.location.href = "/failure"; // Redirect to failure page on error
     } finally {
       setIsLoading(false);
     }
   };
-
   // Handle sending a message
   const handleSendMessage = () => {
     sendMessageToBackend();
