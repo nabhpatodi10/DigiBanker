@@ -33,6 +33,7 @@ export default function DigiBankerManager() {
       timestamp: new Date(),
     },
   ]);
+  const [input, setInput] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(true);
