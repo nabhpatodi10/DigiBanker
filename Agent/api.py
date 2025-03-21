@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Form
 from typing import Optional
 import shutil
 import os
@@ -63,26 +63,30 @@ async def login(request: LoginRequest):
 
 @app.post("/kyc/selfie")
 async def kyc_selfie(
-    user_id: str,
-    selfie: UploadFile = File(None)
+    user_id: str = Form(...),  # Ensure user_id is a form field
+    selfie: UploadFile = File(...)  # Ensure selfie is a file upload
 ):
     if not selfie:
         raise HTTPException(status_code=400, detail="No image provided")
+    
+    # Validate file extension
     ext = os.path.splitext(selfie.filename)[1].lower()
-    if ext not in IMAGE_EXTENSIONS:
+    if ext not in {".png", ".jpg", ".jpeg"}:
         raise HTTPException(status_code=400, detail="Invalid image format. Only PNG, JPG, and JPEG are allowed.")
     
+    # Save the file
     image_path = f"{IMAGE_DIR}/{selfie.filename}"
     with open(image_path, "wb") as buffer:
         shutil.copyfileobj(selfie.file, buffer)
     
+    # Update user information in the database
     db = Database("kyc_selfie")
-    __result = db.update_user_information(user_id, {"image_path" : image_path})
+    __result = db.update_user_information(user_id, {"image_path": image_path})
     db.close_connection()
 
     if not __result:
-        return {"message" : "Error updating user information"}
-
+        return {"message": "Error updating user information"}
+    
     return {"message": "Selfie uploaded successfully"}
 
 @app.post("/kyc/documents")
