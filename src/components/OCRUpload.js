@@ -174,7 +174,7 @@ const OCRUpload = () => {
   
       console.log("API Response:", response.data); // Debugging log
       alert(response.data.message);
-      window.location.href = "/success"; // Redirect to success page
+      window.location.href = "/manager"; // Redirect to success page
     } catch (error) {
       console.error("Error uploading documents:", error); // Debugging log
       alert("Error uploading documents. Please try again.");
