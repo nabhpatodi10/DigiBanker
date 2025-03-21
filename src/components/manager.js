@@ -12,7 +12,10 @@ import {
   Play,
   ChevronRight,
   Video,
-  VideoOff
+  VideoOff,
+  Sun,
+  Moon,
+  Sparkles
 } from "lucide-react";
 import sampleVideo from "../videos/sample.mp4";
 import sampleImage from "../videos/sample.png";
@@ -43,11 +46,31 @@ export default function DigiBankerManager() {
   const [userId, setUserId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [attachments, setAttachments] = useState([]);
+  const [theme, setTheme] = useState(() => {
+    // Check if user has a preferred theme stored
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('digibanker-theme');
+      // Check system preference if no saved theme
+      if (!savedTheme) {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      return savedTheme;
+    }
+    return 'light'; // Default to light theme
+  });
 
   // Refs
   const messagesEndRef = useRef(null);
   const videoRef = useRef(null);
   const userVideoRef = useRef(null);
+
+  // Apply theme to document
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('digibanker-theme', theme);
+    }
+  }, [theme]);
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
@@ -65,6 +88,11 @@ export default function DigiBankerManager() {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Toggle theme
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
   };
 
   // Handle file uploads
@@ -188,6 +216,7 @@ export default function DigiBankerManager() {
       setIsLoading(false);
     }
   };
+  
   // Handle sending a message
   const handleSendMessage = () => {
     sendMessageToBackend();
@@ -332,8 +361,20 @@ export default function DigiBankerManager() {
       {/* Main content */}
       <div className="digibanker-main">
         <div className="digibanker-header">
-          <h1>DigiBanker Assistant</h1>
-          <p>Your intelligent financial companion</p>
+          <div className="logo-container">
+            <Sparkles className="logo-icon" />
+            <h1>DigiBanker Assistant</h1>
+          </div>
+          <div className="header-controls">
+            <p>Your intelligent financial companion</p>
+            <button 
+              className="theme-toggle" 
+              onClick={toggleTheme}
+              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+            </button>
+          </div>
         </div>
         
         <div className="digibanker-content">
@@ -393,12 +434,14 @@ export default function DigiBankerManager() {
                 <button 
                   className={`action-icon ${isRecording ? 'recording' : ''}`}
                   onClick={toggleRecording}
+                  aria-label={isRecording ? "Stop recording" : "Start recording"}
                 >
                   {isRecording ? <MicOff /> : <Mic />}
                 </button>
                 <button 
                   className={`action-icon ${userVideoActive ? 'active' : ''}`}
                   onClick={userVideoActive ? stopUserVideo : startUserVideo}
+                  aria-label={userVideoActive ? "Stop video" : "Start video"}
                 >
                   {userVideoActive ? <VideoOff /> : <Video />}
                 </button>
@@ -406,6 +449,7 @@ export default function DigiBankerManager() {
                   className="send-button"
                   onClick={handleSendMessage}
                   disabled={isLoading || (input.trim() === "" && attachments.length === 0)}
+                  aria-label="Send message"
                 >
                   {isLoading ? <div className="loading-spinner"></div> : <Send />}
                 </button>
@@ -436,6 +480,7 @@ export default function DigiBankerManager() {
                   className="video-control" 
                   onClick={toggleBankManagerVideo}
                   title={videoPlaying ? "Pause video" : "Play video"}
+                  aria-label={videoPlaying ? "Pause video" : "Play video"}
                 >
                   {videoPlaying ? <Pause size={16} /> : <Play size={16} />}
                 </button>
@@ -466,6 +511,7 @@ export default function DigiBankerManager() {
                     <button 
                       className="start-video-btn"
                       onClick={startUserVideo}
+                      aria-label="Start video"
                     >
                       <Video size={24} />
                       <span>Start Video</span>
