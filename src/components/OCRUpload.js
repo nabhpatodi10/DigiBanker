@@ -146,50 +146,54 @@ const OCRUpload = () => {
       </div>
     </div>
   );
+
   const handleFinalSubmit = async () => {
     const requiredDocs = ["aadharFront", "aadharBack", "pan"];
-    
+  
     // Check if all documents are uploaded
     for (const doc of requiredDocs) {
-        if (!images[doc]) {
-            alert(`Please upload or capture ${getDocName(doc)} before submitting.`);
-            return;
-        }
+      if (!images[doc]) {
+        alert(`Please upload or capture ${getDocName(doc)} before submitting.`);
+        return;
+      }
     }
-
-    try {
-        const formData = new FormData();
-        formData.append("aadharFront", dataURItoBlob(images.aadharFront));
-        formData.append("aadharBack", dataURItoBlob(images.aadharBack));
-        formData.append("pan", dataURItoBlob(images.pan));
-        formData.append("email", "admin@gmail.com");  // Replace with actual user email
-
-        const response = await axios.post("http://127.0.0.1:5000/extract-text", formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-        });
-
-        setExtractedData(response.data);  // Store extracted data in state
-
-        alert("All documents processed successfully! Data stored in CSV.");
-    } catch (error) {
-        alert(`Error processing documents: ${error.message}`);
-    }
-};
-
   
+    try {
+      const formData = new FormData();
+      formData.append("aadhaar_front", dataURItoBlob(images.aadharFront), "aadhaar_front.jpg");
+      formData.append("aadhaar_back", dataURItoBlob(images.aadharBack), "aadhaar_back.jpg");
+      formData.append("pan", dataURItoBlob(images.pan), "pan.jpg");
+      formData.append("user_id", "123"); // Replace with actual user ID
+      formData.append("phone_number", "1234567890"); // Replace with actual phone number
+  
+      console.log("FormData:", formData); // Debugging log
+  
+      const response = await axios.post("http://127.0.0.1:5000/kyc/documents", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+  
+      console.log("API Response:", response.data); // Debugging log
+      alert(response.data.message);
+      window.location.href = "/success"; // Redirect to success page
+    } catch (error) {
+      console.error("Error uploading documents:", error); // Debugging log
+      alert("Error uploading documents. Please try again.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white flex items-center justify-center">
       <div className="max-w-7xl mx-auto px-4 py-6 bg-zinc-100 shadow-xl rounded-xl">
         <h1 className="text-3xl font-bold text-gray-900 text-center mb-6">Document Verification</h1>
-        
+
         <div className="bg-white shadow-sm rounded-lg overflow-hidden">
           {currentDoc ? renderCameraCapture() : renderDocSelection()}
         </div>
-  
+
         {/* Final Submit Button */}
         <div className="text-center mt-8">
-          <button 
-            onClick={handleFinalSubmit} 
+          <button
+            onClick={handleFinalSubmit}
             className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200"
           >
             Final Submit & Process Data
@@ -198,7 +202,6 @@ const OCRUpload = () => {
       </div>
     </div>
   );
-  
 };
 
 export default OCRUpload;

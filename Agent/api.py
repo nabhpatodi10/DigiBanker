@@ -91,39 +91,33 @@ async def kyc_selfie(
 
 @app.post("/kyc/documents")
 async def kyc_documents(
-    user_id: str,
-    phone_number: str,
-    aadhaar_front: UploadFile = File(None),
-    aadhaar_back: UploadFile = File(None),
-    pan: UploadFile = File(None)
+    user_id: str = Form(...),  # Ensure user_id is a form field
+    phone_number: str = Form(...),  # Ensure phone_number is a form field
+    aadhaar_front: UploadFile = File(...),  # Ensure aadhaar_front is a file upload
+    aadhaar_back: UploadFile = File(...),  # Ensure aadhaar_back is a file upload
+    pan: UploadFile = File(...)  # Ensure pan is a file upload
 ):
     if not aadhaar_front or not aadhaar_back or not pan:
         raise HTTPException(status_code=400, detail="Please provide all the documents")
-    aadhaar_front_path = None
-    aadhaar_back_path = None
-    pan_path = None
-
-    for doc_type, doc_file in {"aadhaar_front": aadhaar_front, "aadhaar_back": aadhaar_back, "pan": pan}.items():
-        if doc_file:
-            ext = os.path.splitext(doc_file.filename)[1].lower()
-            if ext not in IMAGE_EXTENSIONS:
-                raise HTTPException(status_code=400, detail=f"Invalid image format for {doc_file.filename}. Only PNG, JPG, and JPEG are allowed.")
-            
-            doc_path = f"{IMAGE_DIR}/{doc_file.filename}"
-            with open(doc_path, "wb") as buffer:
-                shutil.copyfileobj(doc_file.file, buffer)
-            
-            if doc_type == "aadhaar_front":
-                aadhaar_front_path = doc_path
-            elif doc_type == "aadhaar_back":
-                aadhaar_back_path = doc_path
-            elif doc_type == "pan":
-                pan_path = doc_path
     
+    # Process and save files
+    aadhaar_front_path = f"{IMAGE_DIR}/{aadhaar_front.filename}"
+    aadhaar_back_path = f"{IMAGE_DIR}/{aadhaar_back.filename}"
+    pan_path = f"{IMAGE_DIR}/{pan.filename}"
+
+    with open(aadhaar_front_path, "wb") as buffer:
+        shutil.copyfileobj(aadhaar_front.file, buffer)
+    with open(aadhaar_back_path, "wb") as buffer:
+        shutil.copyfileobj(aadhaar_back.file, buffer)
+    with open(pan_path, "wb") as buffer:
+        shutil.copyfileobj(pan.file, buffer)
+    
+    # Process documents using the Chain class
     db = Database("kyc_documents")
     chain_instance = Chain()
     __result = chain_instance.kyc_chain(aadhaar_front_path, aadhaar_back_path, pan_path, phone_number, db, user_id)
     db.close_connection()
+
     if __result:
         return {"message": "Documents uploaded successfully"}
     else:
