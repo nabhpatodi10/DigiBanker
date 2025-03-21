@@ -6,16 +6,11 @@ import {
   Send, 
   Mic, 
   MicOff, 
-  Camera, 
-  CameraOff, 
   MessageSquare,
   FileText,
-  CreditCard,
-  PiggyBank,
   Pause,
   Play,
   ChevronRight,
-  Calendar,
   Video,
   VideoOff
 } from "lucide-react";
@@ -35,15 +30,14 @@ export default function DigiBankerManager() {
   ]);
   const [input, setInput] = useState("");
   const [isRecording, setIsRecording] = useState(false);
-  const [cameraActive, setCameraActive] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(true);
   const [userVideoActive, setUserVideoActive] = useState(false);
   const [stream, setStream] = useState(null);
   const [suggestedActions, setSuggestedActions] = useState([
-    { id: 1, text: "Check account balance", icon: <CreditCard size={16} /> },
+    { id: 1, text: "Check account balance", icon: <MessageSquare size={16} /> },
     { id: 2, text: "Apply for a loan", icon: <FileText size={16} /> },
-    { id: 3, text: "Set up savings goal", icon: <PiggyBank size={16} /> },
-    { id: 4, text: "Schedule appointment", icon: <Calendar size={16} /> },
+    { id: 3, text: "Set up savings goal", icon: <MessageSquare size={16} /> },
+    { id: 4, text: "Schedule appointment", icon: <MessageSquare size={16} /> },
   ]);
   const [sessionId, setSessionId] = useState("session-" + Date.now());
   const [userId, setUserId] = useState(null);
@@ -223,12 +217,10 @@ export default function DigiBankerManager() {
       }, 100);
       
       setUserVideoActive(true);
-      setCameraActive(true);
     } catch (err) {
       console.error("Error accessing camera:", err);
       alert("Could not access your camera. Please check your permissions.");
       setUserVideoActive(false);
-      setCameraActive(false);
     }
   };
 
@@ -239,16 +231,6 @@ export default function DigiBankerManager() {
       setStream(null);
     }
     setUserVideoActive(false);
-  };
-
-  // Toggle camera
-  const toggleCamera = () => {
-    if (userVideoActive) {
-      stopUserVideo();
-    } else {
-      startUserVideo();
-    }
-    setCameraActive(!cameraActive);
   };
 
   // Toggle recording
@@ -268,28 +250,6 @@ export default function DigiBankerManager() {
     setVideoPlaying(!videoPlaying);
   };
 
-  // Get assistant response based on user input
-  const getAssistantResponse = (userInput) => {
-    let response = "I understand you're asking about that. Let me help you with this request.";
-    
-    // Simple keyword matching for demo purposes
-    const lowerInput = userInput.toLowerCase();
-    
-    if (lowerInput.includes("loan") || lowerInput.includes("borrow")) {
-      response = "Based on your profile, you're pre-approved for a personal loan of up to $25,000 with an interest rate starting at 7.5%. Would you like to proceed with an application?";
-    } else if (lowerInput.includes("balance") || lowerInput.includes("account")) {
-      response = "Your current account balance is $4,328.57. Your savings account has $12,150.89. Would you like to see your recent transactions?";
-    } else if (lowerInput.includes("transfer") || lowerInput.includes("send money")) {
-      response = "I can help you transfer funds. Please provide the recipient's details and the amount you'd like to transfer.";
-    } else if (lowerInput.includes("hello") || lowerInput.includes("hi")) {
-      response = "Hello! I'm your DigiBanker assistant. How can I help with your banking needs today?";
-    } else if (lowerInput.includes("video")) {
-      response = "I see you're interested in video communication. You can enable your camera using the camera button below to have a more personal interaction.";
-    }
-    
-    handleAssistantResponse(response);
-  };
-  
   // Add assistant message to the chat
   const handleAssistantResponse = (content) => {
     const assistantMessage = {
@@ -346,45 +306,11 @@ export default function DigiBankerManager() {
 
   return (
     <div className="digibanker-container">
-      {/* Sidebar */}
-      <div className="digibanker-sidebar">
-        <div className="digibanker-logo">
-          <h2>DigiBanker</h2>
-        </div>
-        
-        <nav className="digibanker-nav">
-          <button className="nav-item active">
-            <MessageSquare size={20} />
-            <span>Assistant</span>
-          </button>
-          <button className="nav-item">
-            <CreditCard size={20} />
-            <span>Accounts</span>
-          </button>
-          <button className="nav-item">
-            <FileText size={20} />
-            <span>Loans</span>
-          </button>
-          <button className="nav-item">
-            <PiggyBank size={20} />
-            <span>Savings</span>
-          </button>
-        </nav>
-        
-        <div className="user-profile">
-          <div className="avatar">JD</div>
-          <div className="user-info">
-            <h4>John Doe</h4>
-            <p>Premium Member</p>
-          </div>
-        </div>
-      </div>
-      
       {/* Main content */}
       <div className="digibanker-main">
         <div className="digibanker-header">
-          <h1>Virtual Banking Assistant</h1>
-          <p>Get help with your banking needs instantly</p>
+          <h1>DigiBanker Assistant</h1>
+          <p>Your intelligent financial companion</p>
         </div>
         
         <div className="digibanker-content">
@@ -449,7 +375,7 @@ export default function DigiBankerManager() {
                 </button>
                 <button 
                   className={`action-icon ${userVideoActive ? 'active' : ''}`}
-                  onClick={toggleCamera}
+                  onClick={userVideoActive ? stopUserVideo : startUserVideo}
                 >
                   {userVideoActive ? <VideoOff /> : <Video />}
                 </button>
@@ -466,78 +392,63 @@ export default function DigiBankerManager() {
           
           {/* Video section */}
           <div className="video-container">
-            <div className="video-sections">
-              {/* Bank Manager Video */}
-              <div className="manager-video-wrapper">
-                <h3 className="video-title">Banking Assistant</h3>
-                <div className="video-frame">
-                  {videoPlaying ? (
-                    <video 
-                      ref={videoRef}
-                      src={sampleVideo} 
-                      autoPlay 
-                      loop 
-                      muted 
-                      className="assistant-video"
-                    />
-                  ) : (
-                    <div className="video-placeholder">
-                      <img src={sampleImage} alt="Assistant" /> 
-                    </div>
-                  )}
-                  <button 
-                    className="video-control" 
-                    onClick={toggleBankManagerVideo}
-                    title={videoPlaying ? "Pause video" : "Play video"}
-                  >
-                    {videoPlaying ? <Pause size={16} /> : <Play size={16} />}
-                  </button>
-                </div>
+            <div className="assistant-video-container">
+              <h3 className="video-title">Financial Assistant</h3>
+              <div className="video-frame">
+                {videoPlaying ? (
+                  <video 
+                    ref={videoRef}
+                    src={sampleVideo} 
+                    autoPlay 
+                    loop 
+                    muted 
+                    className="assistant-video"
+                  />
+                ) : (
+                  <div className="video-placeholder">
+                    <img src={sampleImage} alt="Assistant" /> 
+                  </div>
+                )}
+                <button 
+                  className="video-control" 
+                  onClick={toggleBankManagerVideo}
+                  title={videoPlaying ? "Pause video" : "Play video"}
+                >
+                  {videoPlaying ? <Pause size={16} /> : <Play size={16} />}
+                </button>
               </div>
               
-              {/* User Video */}
-              <div className="user-video-wrapper">
-                <h3 className="video-title">Your Camera</h3>
-                <div className="video-frame">
-                  {userVideoActive ? (
-                    <video
-                      ref={userVideoRef}
-                      autoPlay
-                      muted
-                      playsInline
-                      className="user-video"
-                    />
-                  ) : (
-                    <div className="video-placeholder">
-                      <p>Click the camera button to start your video</p>
-                      <button 
-                        className="start-video-btn"
-                        onClick={startUserVideo}
-                      >
-                        <Camera size={24} />
-                        <span>Start Camera</span>
-                      </button>
-                    </div>
-                  )}
-                  {userVideoActive && (
-                    <button 
-                      className="video-control red" 
-                      onClick={stopUserVideo}
-                      title="Stop camera"
-                    >
-                      <CameraOff size={16} />
-                    </button>
-                  )}
+              <div className="assistant-info">
+                <div className="assistant-status">
+                  <span className="status-indicator online"></span>
+                  <span>Available Now</span>
                 </div>
               </div>
             </div>
             
-            <div className="assistant-info">
-              <h3>Financial Advisor</h3>
-              <p>DigiBank Virtual Assistant</p>
-              <div className="assistant-status">
-                <span className="status-indicator online"></span>
-                <span>Online</span>
+            {/* User Video */}
+            <div className="user-video-container">
+              <h3 className="video-title">Your Video</h3>
+              <div className="video-frame">
+                {userVideoActive ? (
+                  <video
+                    ref={userVideoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    className="user-video"
+                  />
+                ) : (
+                  <div className="video-placeholder">
+                    <button 
+                      className="start-video-btn"
+                      onClick={startUserVideo}
+                    >
+                      <Video size={24} />
+                      <span>Start Video</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
