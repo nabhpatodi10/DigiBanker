@@ -47,14 +47,19 @@ async def signup(request: SignupRequest):
     db.close_connection()
     return {"message": "User signed up successfully", "data": user_id}
 
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
 @app.post("/login")
-async def login(email: str, password: str):
+async def login(request: LoginRequest):
     db = Database("login")
-    result, user_id = db.authenticate_user(email, password)
+    result, user_id = db.authenticate_user(request.email, request.password)
     if not result:
         return {"message": user_id}
     db.close_connection()
     return {"message": "User logged in successfully", "data": user_id}
+
 
 @app.post("/kyc/selfie")
 async def kyc_selfie(
