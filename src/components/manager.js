@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import sampleVideo from "../videos/sample.mp4";
-import sampleImage from "../videos/sample.png";
-
+import axios from 'axios';
 import { 
   Send, 
   Mic, 
@@ -21,6 +19,8 @@ import {
   Video,
   VideoOff
 } from "lucide-react";
+import sampleVideo from "../videos/sample.mp4";
+import sampleImage from "../videos/sample.png";
 import "./manager.css";
 
 export default function DigiBankerManager() {
@@ -38,7 +38,6 @@ export default function DigiBankerManager() {
   const [cameraActive, setCameraActive] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(true);
   const [userVideoActive, setUserVideoActive] = useState(false);
-
   const [stream, setStream] = useState(null);
   const [suggestedActions, setSuggestedActions] = useState([
     { id: 1, text: "Check account balance", icon: <CreditCard size={16} /> },
@@ -46,6 +45,10 @@ export default function DigiBankerManager() {
     { id: 3, text: "Set up savings goal", icon: <PiggyBank size={16} /> },
     { id: 4, text: "Schedule appointment", icon: <Calendar size={16} /> },
   ]);
+  const [sessionId, setSessionId] = useState("session-" + Date.now());
+  const [userId, setUserId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [attachments, setAttachments] = useState([]);
 
   // Refs
   const messagesEndRef = useRef(null);
@@ -69,6 +72,129 @@ export default function DigiBankerManager() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  // Handle file uploads
+  const handleFileUpload = (event) => {
+    const files = Array.from(event.target.files);
+    setAttachments([...attachments, ...files]);
+  };
+
+  // Function to connect with the backend API
+  const sendMessageToBackend = async () => {
+    if (input.trim() === "" && attachments.length === 0 && !stream) return;
+    
+    // Add user message to chat
+    const userMessage = {
+      id: Date.now().toString(),
+      role: "user",
+      content: input || "Sent attachments",
+      timestamp: new Date(),
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append("session_id", sessionId);
+      formData.append("user_id", userId || "default-user-id"); // Use stored userId or default
+      
+      if (input.trim() !== "") {
+        formData.append("text", input);
+      }
+      
+      // Add any image attachments
+      attachments.forEach(file => {
+        if (file.type.startsWith('image/')) {
+          formData.append("images", file);
+        }
+      });
+      
+      // Add video if camera is active
+      if (stream && userVideoRef.current) {
+        // Capture frame from video as a blob
+        const canvas = document.createElement('canvas');
+        canvas.width = userVideoRef.current.videoWidth;
+        canvas.height = userVideoRef.current.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(userVideoRef.current, 0, 0);
+        
+        // Convert canvas to blob
+        canvas.toBlob(async (blob) => {
+          const videoFile = new File([blob], "video-capture.jpg", { type: 'image/jpeg' });
+          formData.append("video", videoFile);
+          
+          await completeRequest(formData);
+        }, 'image/jpeg');
+      } else {
+        await completeRequest(formData);
+      }
+    } catch (error) {
+      console.error("Error communicating with backend:", error);
+      handleAssistantResponse("I'm having trouble connecting to the server. Please try again later.");
+      setIsLoading(false);
+    }
+    
+    // Clear input and attachments after sending
+    setInput("");
+    setAttachments([]);
+  };
+
+  // Helper function to complete the API request
+  const completeRequest = async (formData) => {
+    try {
+      const response = await axios.post('http://localhost:8000/chat', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      // Handle the response
+      const data = response.data.data;
+      
+      // Store userId if returned and not already set
+      if (data.user_id && !userId) {
+        setUserId(data.user_id);
+      }
+      
+      // Add assistant response to chat
+      if (data.agent_response) {
+        handleAssistantResponse(data.agent_response);
+      } else if (!data.approved) {
+        handleAssistantResponse("Face verification failed. Please try again with a clearer image.");
+      }
+    } catch (error) {
+      console.error("Error in API request:", error);
+      handleAssistantResponse("I encountered an error processing your request. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle sending a message
+  const handleSendMessage = () => {
+    sendMessageToBackend();
+  };
+
+  // Render file upload button
+  const renderFileUploadButton = () => (
+    <div className="file-upload">
+      <input
+        type="file"
+        id="file-upload"
+        multiple
+        accept="image/*,.pdf,.doc,.docx"
+        onChange={handleFileUpload}
+        style={{ display: 'none' }}
+      />
+      <label htmlFor="file-upload" className="action-icon">
+        <FileText />
+      </label>
+      {attachments.length > 0 && (
+        <span className="attachment-count">{attachments.length}</span>
+      )}
+    </div>
+  );
 
   // Start user video
   const startUserVideo = async () => {
@@ -105,6 +231,7 @@ export default function DigiBankerManager() {
       setCameraActive(false);
     }
   };
+
   // Stop user video
   const stopUserVideo = () => {
     if (stream) {
@@ -139,27 +266,6 @@ export default function DigiBankerManager() {
   // Toggle bank manager video
   const toggleBankManagerVideo = () => {
     setVideoPlaying(!videoPlaying);
-  };
-
-  // Handle sending a message
-  const handleSendMessage = () => {
-    if (input.trim() === "") return;
-
-    // Add user message
-    const userMessage = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-      timestamp: new Date(),
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
-    setInput("");
-
-    // Simulate assistant response
-    setTimeout(() => {
-      getAssistantResponse(input);
-    }, 1000);
   };
 
   // Get assistant response based on user input
@@ -334,6 +440,7 @@ export default function DigiBankerManager() {
                 }}
               />
               <div className="input-actions">
+                {renderFileUploadButton()}
                 <button 
                   className={`action-icon ${isRecording ? 'recording' : ''}`}
                   onClick={toggleRecording}
@@ -349,9 +456,9 @@ export default function DigiBankerManager() {
                 <button 
                   className="send-button"
                   onClick={handleSendMessage}
-                  disabled={input.trim() === ""}
+                  disabled={isLoading || (input.trim() === "" && attachments.length === 0)}
                 >
-                  <Send />
+                  {isLoading ? <div className="loading-spinner"></div> : <Send />}
                 </button>
               </div>
             </div>

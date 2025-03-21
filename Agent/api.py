@@ -2,12 +2,29 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from typing import Optional
 import shutil
 import os
-
+from fastapi.middleware.cors import CORSMiddleware
 from database import Database
 from chain import Chain
+from pydantic import BaseModel
 
 # Initialize FastAPI app
 app = FastAPI()
+
+origins = [
+    "http://localhost",
+    "http://localhost:8080",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    # Add other origins as needed
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Allows specified origins
+    allow_credentials=True,
+    allow_methods=["*"],    # Allows all methods
+    allow_headers=["*"],    # Allows all headers
+)
 
 IMAGE_DIR = "Images"
 UPLOAD_DIR = "Uploads"
@@ -17,10 +34,14 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg"}
 VIDEO_EXTENSIONS = {".mp4", ".avi", ".mov"}
 
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+
 @app.post("/signup")
-async def signup(email: str, password: str):
+async def signup(request: SignupRequest):
     db = Database("signup")
-    result, user_id = db.add_user_information(email, password)
+    result, user_id = db.add_user_information(request.email, request.password)
     if not result:
         return {"message": user_id}
     db.close_connection()
@@ -178,4 +199,4 @@ async def chat(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("api:app", reload=True)
+    uvicorn.run("api:app", host="127.0.0.1", port=5000, reload=True)

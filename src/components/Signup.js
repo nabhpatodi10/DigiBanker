@@ -1,15 +1,11 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { TypeAnimation } from "react-type-animation";
- // Make sure to create this CSS file
 
 const Signup = ({ history }) => {
   const [form, setForm] = useState({
-    name: "",
     email: "",
     password: "",
-    gender: "",
-    phone: "",
   });
 
   const handleChange = (e) => {
@@ -18,18 +14,32 @@ const Signup = ({ history }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Form submitted:", form); // Debugging line
+
     try {
-      const response = await axios.post("http://127.0.0.1:5000/signup", form);
+      const response = await axios.post(
+        "http://127.0.0.1:5000/signup",
+        {
+          email: form.email, // Ensure these fields match the backend's expectations
+          password: form.password,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log("API Response:", response.data); // Debugging line
       alert(response.data.message);
       history.push("/login");
     } catch (err) {
       console.error("Signup Error:", err.response ? err.response.data : err.message);
-      alert("Signup failed: " + (err.response?.data?.error || "Unknown error"));
+      alert("Signup failed: " + (err.response?.data?.message || "Unknown error"));
     }
   };
 
   return (
-<div className="min-h-screen bg-white flex w-full">
+    <div className="min-h-screen bg-white flex w-full">
       {/* Left side - Loan Manager Header */}
       <div className="hidden md:flex md:w-1/2 bg-stone-100 flex-col justify-center items-center">
         <div className="px-12">
@@ -51,15 +61,11 @@ const Signup = ({ history }) => {
               style={{ fontSize: '1.25rem', display: 'inline-block', height: '3em' }}
               repeat={Infinity}
             />
-                
           </div>
-          <img src="https://illustrations.popsy.co/amber/finance-growth.svg" alt="Money" className=" h-[50vh] " />
-         
-       
-
+          <img src="https://illustrations.popsy.co/amber/finance-growth.svg" alt="Money" className="h-[50vh]" />
         </div>
       </div>
-      
+
       {/* Right side - Signup Form */}
       <div className="w-full md:w-1/2 flex flex-col justify-center py-12 px-6 sm:px-12">
         <div className="mx-auto w-full max-w-sm">
@@ -71,23 +77,6 @@ const Signup = ({ history }) => {
           </p>
 
           <form className="space-y-5" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <div className="mt-1">
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
-                  placeholder="John Doe"
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email Address
@@ -117,45 +106,6 @@ const Signup = ({ history }) => {
                   required
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
                   placeholder="••••••••"
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
-                Gender
-              </label>
-              <div className="mt-1">
-                <select
-                  id="gender"
-                  name="gender"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
-                  onChange={handleChange}
-                  defaultValue=""
-                >
-                  <option value="" disabled>Select Gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                  <option value="prefer-not-to-say">Prefer not to say</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone Number
-              </label>
-              <div className="mt-1">
-                <input
-                  id="phone"
-                  name="phone"
-                  type="text"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
-                  placeholder="+91 9999999999"
                   onChange={handleChange}
                 />
               </div>
