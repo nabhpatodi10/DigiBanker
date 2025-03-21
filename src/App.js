@@ -8,6 +8,7 @@ import Loan from "./loan";
 import SuccessPage from "./components/success";
 import Failure from "./components/failure";
 import Preview from "./components/preview";
+import DigiBankerManager from "./components/manager";
 function App() {
   return (
     <Router>
@@ -20,6 +21,7 @@ function App() {
         <Route path="/success" element={<SuccessPage />} />
         <Route path="/failure" element={<Failure />} />
         <Route path="/preview" element={<Preview />} />
+        <Route path="/manager" element={<DigiBankerManager />} />
 
       </Routes>
     </Router>
