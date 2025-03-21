@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import sampleVideo from "../videos/sample.mp4";
+import sampleImage from "../videos/sample.png";
+
 import { 
   Send, 
   Mic, 
@@ -30,11 +33,11 @@ export default function DigiBankerManager() {
       timestamp: new Date(),
     },
   ]);
-  const [input, setInput] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(true);
   const [userVideoActive, setUserVideoActive] = useState(false);
+
   const [stream, setStream] = useState(null);
   const [suggestedActions, setSuggestedActions] = useState([
     { id: 1, text: "Check account balance", icon: <CreditCard size={16} /> },
@@ -350,7 +353,7 @@ export default function DigiBankerManager() {
                   {videoPlaying ? (
                     <video 
                       ref={videoRef}
-                      src="/videos/v1.mp4" 
+                      src={sampleVideo} 
                       autoPlay 
                       loop 
                       muted 
@@ -358,7 +361,7 @@ export default function DigiBankerManager() {
                     />
                   ) : (
                     <div className="video-placeholder">
-                      <p>Assistant video paused</p>
+                      <img src={sampleImage} alt="Assistant" /> 
                     </div>
                   )}
                   <button 
