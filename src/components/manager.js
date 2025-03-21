@@ -73,6 +73,11 @@ export default function DigiBankerManager() {
   // Start user video
   const startUserVideo = async () => {
     try {
+      // Stop any existing stream first
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: 640 },
@@ -82,16 +87,24 @@ export default function DigiBankerManager() {
       });
       
       setStream(mediaStream);
-      if (userVideoRef.current) {
-        userVideoRef.current.srcObject = mediaStream;
-      }
+      
+      // Use a timeout to ensure the ref is available
+      setTimeout(() => {
+        if (userVideoRef.current) {
+          userVideoRef.current.srcObject = mediaStream;
+          userVideoRef.current.play().catch(e => console.error("Video play error:", e));
+        }
+      }, 100);
+      
       setUserVideoActive(true);
+      setCameraActive(true);
     } catch (err) {
       console.error("Error accessing camera:", err);
       alert("Could not access your camera. Please check your permissions.");
+      setUserVideoActive(false);
+      setCameraActive(false);
     }
   };
-
   // Stop user video
   const stopUserVideo = () => {
     if (stream) {
