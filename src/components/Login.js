@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { TypeAnimation } from "react-type-animation";
 import { Moon, Sun } from "lucide-react";
+import useUserStore from '../store/useUserStore';
 
 const Login = ({ history }) => {
+  const setUserId = useUserStore(state => state.setUserId);
   const [form, setForm] = useState({ email: "", password: "" });
   const [darkMode, setDarkMode] = useState(false);
   
@@ -32,6 +34,9 @@ const Login = ({ history }) => {
         headers: { "Content-Type": "application/json" },
       });
       console.log("Login Response:", response.data);
+      const fetchedUserId = response.data.data
+      setUserId(fetchedUserId);
+      console.log("User ID set:", fetchedUserId);
       alert(response.data.message);
       window.location.href = "/camera";
     } catch (err) {

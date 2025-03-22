@@ -3,8 +3,6 @@ load_dotenv()
 
 import os
 import uuid
-from datetime import date
-from typing import Literal
 from cryptography.fernet import Fernet
 from pymongo import MongoClient
 from langchain_mongodb import MongoDBChatMessageHistory
@@ -109,6 +107,9 @@ class Database:
         
     def update_user_information(self, user_id: str, data: dict[str, any]) -> bool:
         try:
+            __fetch = self.__user_information.find_one({"user_id": user_id})
+            if not __fetch or __fetch is None or __fetch == None:
+                return False
             with open("key.key", "rb") as __file:
                 __key = __file.read()
             __file.close()

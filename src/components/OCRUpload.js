@@ -323,8 +323,8 @@ const OCRUpload = () => {
       formData.append("aadhaar_front", dataURItoBlob(images.aadharFront), "aadhaar_front.jpg");
       formData.append("aadhaar_back", dataURItoBlob(images.aadharBack), "aadhaar_back.jpg");
       formData.append("pan", dataURItoBlob(images.pan), "pan.jpg");
-      formData.append("user_id", "123"); // Replace with actual user ID
-      formData.append("phone_number", "1234567890"); // Replace with actual phone number
+      formData.append("user_id", "2e52db71-c4a9-4de4-8769-aaee56ce3565"); // Replace with actual user ID
+      formData.append("phone_number", "7694072747"); // Replace with actual phone number
   
       console.log("FormData:", formData); // Debugging log
   

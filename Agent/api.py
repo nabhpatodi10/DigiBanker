@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Form
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from typing import Optional
 import shutil
 import os
@@ -15,12 +15,13 @@ origins = [
     "http://localhost:8080",
     "http://localhost:3000",
     "http://localhost:3001",
+    "http://127.0.0.1:3000"
     # Add other origins as needed
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # Allows specified origins
+    allow_origins=["*"],  # Allows specified origins
     allow_credentials=True,
     allow_methods=["*"],    # Allows all methods
     allow_headers=["*"],    # Allows all headers
@@ -40,6 +41,7 @@ class SignupRequest(BaseModel):
 
 @app.post("/signup")
 async def signup(request: SignupRequest):
+    print("hello")
     db = Database("signup")
     result, user_id = db.add_user_information(request.email, request.password)
     if not result:
@@ -202,4 +204,4 @@ async def chat(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("api:app", host="127.0.0.1", port=5000, reload=True)
+    uvicorn.run(app, host="127.0.0.1", port=5000)

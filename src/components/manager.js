@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import axios from 'axios';
 import { 
   Send, 
   Mic, 
@@ -22,7 +21,22 @@ import sampleImage from "../videos/sample.png";
 import "./manager.css";
 
 export default function DigiBankerManager() {
+  // Hardcoded responses
+  const hardcodedResponses = [
+    "Understood. Can you please mention your highest education?",
+    "Got it. Now provide your current annual income and years of work experience.",
+    "Please further inform me whether you currently own a house?",
+    "Mention the loan amount you are looking for and the purpose of the loan.",
+    "I see you have a credit card payment due in 3 days. Would you like me to schedule a payment?",
+    "Based on your spending patterns, I notice you could save about $120 per month by adjusting your subscription services.",
+    "I've analyzed your accounts and you appear to be on track for your retirement goals. Would you like a detailed report?",
+    "For international transfers, we charge a flat fee of $25 plus 1% of the transfer amount. Would you like to proceed?",
+    "I can help you set up automatic savings. How much would you like to transfer to savings each month?",
+    "Your credit score has improved by 15 points since last month. Congratulations!",
+  ];
+
   // State management
+  const [responseIndex, setResponseIndex] = useState(0);
   const [messages, setMessages] = useState([
     {
       id: "welcome",
@@ -42,8 +56,6 @@ export default function DigiBankerManager() {
     { id: 3, text: "Set up savings goal", icon: <MessageSquare size={16} /> },
     { id: 4, text: "Schedule appointment", icon: <MessageSquare size={16} /> },
   ]);
-  const [sessionId, setSessionId] = useState("session-" + Date.now());
-  const [userId, setUserId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [theme, setTheme] = useState(() => {
@@ -101,125 +113,44 @@ export default function DigiBankerManager() {
     setAttachments([...attachments, ...files]);
   };
 
-  // Function to connect with the backend API
-  const sendMessageToBackend = async () => {
+  // Get next hardcoded response
+  const getNextResponse = () => {
+    const response = hardcodedResponses[responseIndex % hardcodedResponses.length];
+    setResponseIndex(prevIndex => prevIndex + 1);
+    return response;
+  };
+
+  // Handle sending a message with hardcoded response
+  const handleSendMessage = () => {
     if (input.trim() === "" && attachments.length === 0 && !stream) return;
-  
-    // Add user message to chat
+
+    // Add user message
     const userMessage = {
       id: Date.now().toString(),
       role: "user",
       content: input || "Sent attachments",
       timestamp: new Date(),
     };
-  
-    setMessages((prev) => [...prev, userMessage]);
+    
+    setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
-  
-    try {
-      const formData = new FormData();
-      formData.append("session_id", sessionId);
-      formData.append("user_id", userId || "default-user-id"); // Use stored userId or default
-  
-      if (input.trim() !== "") {
-        formData.append("text", input);
-      }
-  
-      // Add any image attachments
-      attachments.forEach((file) => {
-        if (file.type.startsWith("image/")) {
-          formData.append("images", file);
-        }
-      });
-  
-      // Log the FormData for debugging
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
-  
-      // Add video if camera is active
-      if (stream && userVideoRef.current) {
-        // Capture frame from video as a blob
-        const canvas = document.createElement("canvas");
-        canvas.width = userVideoRef.current.videoWidth;
-        canvas.height = userVideoRef.current.videoHeight;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(userVideoRef.current, 0, 0);
-  
-        // Convert canvas to blob
-        canvas.toBlob(async (blob) => {
-          const videoFile = new File([blob], "video-capture.jpg", {
-            type: "image/jpeg",
-          });
-          formData.append("video", videoFile);
-  
-          await completeRequest(formData);
-        }, "image/jpeg");
-      } else {
-        await completeRequest(formData);
-      }
-    } catch (error) {
-      console.error("Error communicating with backend:", error);
-      handleAssistantResponse(
-        "I'm having trouble connecting to the server. Please try again later."
-      );
-      setIsLoading(false);
-    }
-  
-    // Clear input and attachments after sending
+    
+    // Clear input and attachments
     setInput("");
     setAttachments([]);
-  };
-  
-  // Helper function to complete the API request
-  const completeRequest = async (formData) => {
-    try {
-      const response = await axios.post("http://127.0.0.1:5000/chat", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-  
-      // Log the response for debugging
-      console.log("Backend Response:", response.data);
-  
-      // Handle the response
-      const data = response.data.data;
-  
-      // Store userId if returned and not already set
-      if (data.user_id && !userId) {
-        setUserId(data.user_id);
-      }
-  
-      // Add assistant response to chat
-      if (data.agent_response) {
-        handleAssistantResponse(data.agent_response);
-      } else if (!data.approved) {
-        handleAssistantResponse(
-          "Face verification failed. Please try again with a clearer image."
-        );
-      }
-  
-      // Redirect based on success or failure
-      if (data.success) {
-        window.location.href = "/success"; // Redirect to success page
-      } else {
-        window.location.href = "/failure"; // Redirect to failure page
-      }
-    } catch (error) {
-      console.error("Error in API request:", error);
-      handleAssistantResponse(
-        "I encountered an error processing your request. Please try again."
-      );
-      window.location.href = "/failure"; // Redirect to failure page on error
-    } finally {
+    
+    // Simulate response delay
+    setTimeout(() => {
+      const assistantMessage = {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: getNextResponse(),
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, assistantMessage]);
       setIsLoading(false);
-    }
-  };
-  
-  // Handle sending a message
-  const handleSendMessage = () => {
-    sendMessageToBackend();
+    }, 1000);
   };
 
   // Render file upload button
@@ -292,7 +223,15 @@ export default function DigiBankerManager() {
     // Simulate receiving a response after recording stops
     if (isRecording) {
       setTimeout(() => {
-        handleAssistantResponse("I've processed your audio message. How else can I assist you today?");
+        const response = "I've processed your audio message. " + getNextResponse();
+        const assistantMessage = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: response,
+          timestamp: new Date(),
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
       }, 1500);
     }
   };
@@ -300,18 +239,6 @@ export default function DigiBankerManager() {
   // Toggle bank manager video
   const toggleBankManagerVideo = () => {
     setVideoPlaying(!videoPlaying);
-  };
-
-  // Add assistant message to the chat
-  const handleAssistantResponse = (content) => {
-    const assistantMessage = {
-      id: Date.now().toString(),
-      role: "assistant",
-      content: content,
-      timestamp: new Date(),
-    };
-    
-    setMessages(prev => [...prev, assistantMessage]);
   };
 
   // Handle suggested action click
@@ -344,10 +271,17 @@ export default function DigiBankerManager() {
           response = "I can help you schedule an appointment with one of our financial advisors. Would you prefer an in-person meeting or a video call?";
           break;
         default:
-          response = "I'd be happy to help with that request.";
+          response = getNextResponse();
       }
       
-      handleAssistantResponse(response);
+      const assistantMessage = {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: response,
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, assistantMessage]);
     }, 1000);
   };
 

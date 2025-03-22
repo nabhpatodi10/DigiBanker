@@ -2,8 +2,11 @@ import React, { useRef, useState, useEffect } from "react";
 import Webcam from "react-webcam";
 import axios from "axios";
 import "./camera.css";
+import useUserStore from "../store/useUserStore";
 
 const Camera = () => {
+  const userId = useUserStore(state => state.userId);
+
   const webcamRef = useRef(null);
   const [image, setImage] = useState(null);
   const [isCapturing, setIsCapturing] = useState(true);
@@ -40,9 +43,11 @@ const Camera = () => {
       const formData = new FormData();
       const blob = dataURItoBlob(image);
       formData.append("selfie", blob, "selfie.jpg"); // Match the backend's expected field name
-      formData.append("user_id", "123"); // Replace "123" with the actual user ID
-  
-      console.log("FormData:", formData); // Debugging log
+      formData.append("user_id", "2e52db71-c4a9-4de4-8769-aaee56ce3565"); // Use the actual user ID
+      console.log("FormData entries:");
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+      } // Debugging log
   
       const response = await axios.post("http://127.0.0.1:5000/kyc/selfie", formData, {
         headers: { "Content-Type": "multipart/form-data" },
