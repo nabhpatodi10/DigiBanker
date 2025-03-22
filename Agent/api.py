@@ -205,8 +205,4 @@ async def chat(
 
 if __name__ == "__main__":
     import uvicorn
-<<<<<<< HEAD
     uvicorn.run(app, host="127.0.0.1", port=5000)
-=======
-    uvicorn.run("api:app", host="127.0.0.1", port=5000, reload=True)
->>>>>>> 10e26646633579c995fe7f4bb84bb295434e8cbe
