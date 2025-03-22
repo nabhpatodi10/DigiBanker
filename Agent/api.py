@@ -145,7 +145,6 @@ async def chat(
     db = Database(session_id)
     __user_information = db.get_user_information(email=None, user_id=user_id)
 
-
     # Validate and Save Image
     for image in images:
         ext = os.path.splitext(image.filename)[1].lower()
@@ -185,7 +184,7 @@ async def chat(
             for key, value in __user_information.items():
                 __information += f"{key}: {value}\n"
             if not db.add_loan_application(user_id):
-                return {"message": "Error adding loan application"}
+                return {"message": "Error adding loan application", "success": False}
         attachment_text = "\n-------------\n".join(attachments)
         attachment_text = "Data from Attachments provided by the User:\n\n" + attachment_text if attachment_text else "No Data From Attachments, No Attachments found!\n-------------\n"
         text = text if text else ""
@@ -199,9 +198,15 @@ async def chat(
     else:
         response_data["agent_response"] = "Face Not Matched!"
     
+    # Add a success field to the response
+    response_data["success"] = approved  # Use the approved status as the success flag
 
     return {"message": "Chat data received", "data": response_data}
 
 if __name__ == "__main__":
     import uvicorn
+<<<<<<< HEAD
     uvicorn.run(app, host="127.0.0.1", port=5000)
+=======
+    uvicorn.run("api:app", host="127.0.0.1", port=5000, reload=True)
+>>>>>>> 10e26646633579c995fe7f4bb84bb295434e8cbe
