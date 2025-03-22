@@ -21,7 +21,6 @@ import sampleImage from "../videos/sample.png";
 import "./manager.css";
 
 export default function DigiBankerManager() {
-  // Hardcoded responses
   const hardcodedResponses = [
     "Understood. Can you please mention your highest education?",
     "Got it. Now provide your current annual income and years of work experience.",
@@ -35,7 +34,6 @@ export default function DigiBankerManager() {
     "Your credit score has improved by 15 points since last month. Congratulations!",
   ];
 
-  // State management
   const [responseIndex, setResponseIndex] = useState(0);
   const [messages, setMessages] = useState([
     {
@@ -59,24 +57,21 @@ export default function DigiBankerManager() {
   const [isLoading, setIsLoading] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [theme, setTheme] = useState(() => {
-    // Check if user has a preferred theme stored
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('digibanker-theme');
-      // Check system preference if no saved theme
       if (!savedTheme) {
         return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       }
       return savedTheme;
     }
-    return 'light'; // Default to light theme
+    return 'light';
   });
 
-  // Refs
   const messagesEndRef = useRef(null);
   const videoRef = useRef(null);
   const userVideoRef = useRef(null);
+  const recognitionRef = useRef(null);
 
-  // Apply theme to document
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     if (typeof window !== 'undefined') {
@@ -84,16 +79,20 @@ export default function DigiBankerManager() {
     }
   }, [theme]);
 
-  // Auto-scroll to bottom of messages
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Clean up video streams on unmount
   useEffect(() => {
     return () => {
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
+      }
+      if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+      }
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
       }
     };
   }, [stream]);
@@ -102,29 +101,49 @@ export default function DigiBankerManager() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Toggle theme
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
   };
 
-  // Handle file uploads
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
     setAttachments([...attachments, ...files]);
   };
 
-  // Get next hardcoded response
   const getNextResponse = () => {
     const response = hardcodedResponses[responseIndex % hardcodedResponses.length];
     setResponseIndex(prevIndex => prevIndex + 1);
     return response;
   };
 
-  // Handle sending a message with hardcoded response
+  const speakText = (text) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.voice = speechSynthesis.getVoices().find(voice => voice.name === "Google US English");
+      utterance.rate = 1;
+      utterance.pitch = 1;
+
+      utterance.onstart = () => {
+        if (videoRef.current) {
+          videoRef.current.play();
+        }
+      };
+
+      utterance.onend = () => {
+        if (videoRef.current) {
+          videoRef.current.pause();
+        }
+      };
+
+      speechSynthesis.speak(utterance);
+    } else {
+      console.error("Text-to-speech is not supported in this browser.");
+    }
+  };
+
   const handleSendMessage = () => {
     if (input.trim() === "" && attachments.length === 0 && !stream) return;
 
-    // Add user message
     const userMessage = {
       id: Date.now().toString(),
       role: "user",
@@ -135,11 +154,9 @@ export default function DigiBankerManager() {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     
-    // Clear input and attachments
     setInput("");
     setAttachments([]);
     
-    // Simulate response delay
     setTimeout(() => {
       const assistantMessage = {
         id: Date.now().toString(),
@@ -150,10 +167,11 @@ export default function DigiBankerManager() {
       
       setMessages(prev => [...prev, assistantMessage]);
       setIsLoading(false);
+
+      speakText(assistantMessage.content);
     }, 1000);
   };
 
-  // Render file upload button
   const renderFileUploadButton = () => (
     <div className="file-upload">
       <input
@@ -173,10 +191,8 @@ export default function DigiBankerManager() {
     </div>
   );
 
-  // Start user video
   const startUserVideo = async () => {
     try {
-      // Stop any existing stream first
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
@@ -191,7 +207,6 @@ export default function DigiBankerManager() {
       
       setStream(mediaStream);
       
-      // Use a timeout to ensure the ref is available
       setTimeout(() => {
         if (userVideoRef.current) {
           userVideoRef.current.srcObject = mediaStream;
@@ -207,7 +222,6 @@ export default function DigiBankerManager() {
     }
   };
 
-  // Stop user video
   const stopUserVideo = () => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
@@ -216,34 +230,52 @@ export default function DigiBankerManager() {
     setUserVideoActive(false);
   };
 
-  // Toggle recording
   const toggleRecording = () => {
+    if (!isRecording) {
+      startSpeechRecognition();
+    } else {
+      stopSpeechRecognition();
+    }
     setIsRecording(!isRecording);
-    
-    // Simulate receiving a response after recording stops
-    if (isRecording) {
-      setTimeout(() => {
-        const response = "I've processed your audio message. " + getNextResponse();
-        const assistantMessage = {
-          id: Date.now().toString(),
-          role: "assistant",
-          content: response,
-          timestamp: new Date(),
-        };
-        
-        setMessages(prev => [...prev, assistantMessage]);
-      }, 1500);
+  };
+
+  const startSpeechRecognition = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+
+    recognitionRef.current = new SpeechRecognition();
+    recognitionRef.current.continuous = true;
+    recognitionRef.current.interimResults = true;
+    recognitionRef.current.lang = "en-US";
+
+    recognitionRef.current.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map(result => result[0].transcript)
+        .join("");
+      setInput(transcript);
+    };
+
+    recognitionRef.current.onerror = (event) => {
+      console.error("Speech recognition error:", event.error);
+    };
+
+    recognitionRef.current.start();
+  };
+
+  const stopSpeechRecognition = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
     }
   };
 
-  // Toggle bank manager video
   const toggleBankManagerVideo = () => {
     setVideoPlaying(!videoPlaying);
   };
 
-  // Handle suggested action click
   const handleSuggestedAction = (action) => {
-    // Add user message with the clicked suggestion
     const userMessage = {
       id: Date.now().toString(),
       role: "user",
@@ -253,7 +285,6 @@ export default function DigiBankerManager() {
     
     setMessages(prev => [...prev, userMessage]);
 
-    // Simulate assistant response based on action
     setTimeout(() => {
       let response = "";
       
@@ -282,17 +313,16 @@ export default function DigiBankerManager() {
       };
       
       setMessages(prev => [...prev, assistantMessage]);
+      speakText(response);
     }, 1000);
   };
 
-  // Format timestamp
   const formatTime = (date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
     <div className="digibanker-container">
-      {/* Main content */}
       <div className="digibanker-main">
         <div className="digibanker-header">
           <div className="logo-container">
@@ -312,7 +342,6 @@ export default function DigiBankerManager() {
         </div>
         
         <div className="digibanker-content">
-          {/* Chat section */}
           <div className="chat-container">
             <div className="chat-messages">
               {messages.map((message) => (
@@ -329,7 +358,6 @@ export default function DigiBankerManager() {
               <div ref={messagesEndRef} />
             </div>
             
-            {/* Suggested actions */}
             {messages.length < 3 && (
               <div className="suggested-actions">
                 <h3>I can help you with:</h3>
@@ -349,7 +377,6 @@ export default function DigiBankerManager() {
               </div>
             )}
             
-            {/* Input area */}
             <div className="chat-input">
               <input
                 type="text"
@@ -391,7 +418,6 @@ export default function DigiBankerManager() {
             </div>
           </div>
           
-          {/* Video section */}
           <div className="video-container">
             <div className="assistant-video-container">
               <h3 className="video-title">Financial Assistant</h3>
@@ -400,7 +426,6 @@ export default function DigiBankerManager() {
                   <video 
                     ref={videoRef}
                     src={sampleVideo} 
-                    autoPlay 
                     loop 
                     muted 
                     className="assistant-video"
@@ -428,7 +453,6 @@ export default function DigiBankerManager() {
               </div>
             </div>
             
-            {/* User Video */}
             <div className="user-video-container">
               <h3 className="video-title">Your Video</h3>
               <div className="video-frame">
