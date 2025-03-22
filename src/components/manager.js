@@ -16,7 +16,7 @@ import {
   Moon,
   Sparkles
 } from "lucide-react";
-import sampleVideo from "../videos/sample.mp4";
+import sampleVideo from "../videos/v1.mp4";
 import sampleImage from "../videos/sample.png";
 import "./manager.css";
 
