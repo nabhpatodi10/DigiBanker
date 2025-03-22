@@ -63,6 +63,12 @@ export default function DigiBankerManager() {
   const messagesEndRef = useRef(null);
   const videoRef = useRef(null);
   const userVideoRef = useRef(null);
+  const synthRef = useRef(null); // Ref for speech synthesis
+
+  // Initialize speech synthesis
+  useEffect(() => {
+    synthRef.current = window.speechSynthesis;
+  }, []);
 
   // Apply theme to document
   useEffect(() => {
@@ -99,6 +105,14 @@ export default function DigiBankerManager() {
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
     setAttachments([...attachments, ...files]);
+  };
+
+  // Function to convert text to speech
+  const speak = (text) => {
+    if (synthRef.current && text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      synthRef.current.speak(utterance);
+    }
   };
 
   // Function to connect with the backend API
@@ -312,6 +326,7 @@ export default function DigiBankerManager() {
     };
     
     setMessages(prev => [...prev, assistantMessage]);
+    speak(content); // Convert assistant's response to speech
   };
 
   // Handle suggested action click
