@@ -27,6 +27,7 @@ app.add_middleware(
     allow_headers=["*"],    # Allows all headers
 )
 
+USER_ID = "509718c5-aeac-4a18-81af-24cb8d40f0be"
 IMAGE_DIR = "Images"
 UPLOAD_DIR = "Uploads"
 os.makedirs(IMAGE_DIR, exist_ok=True)
@@ -83,7 +84,7 @@ async def kyc_selfie(
     
     # Update user information in the database
     db = Database("kyc_selfie")
-    __result = db.update_user_information(user_id, {"image_path": image_path})
+    __result = db.update_user_information(USER_ID, {"image_path": image_path})
     db.close_connection()
 
     if not __result:
@@ -117,7 +118,7 @@ async def kyc_documents(
     # Process documents using the Chain class
     db = Database("kyc_documents")
     chain_instance = Chain()
-    __result = chain_instance.kyc_chain(aadhaar_front_path, aadhaar_back_path, pan_path, phone_number, db, user_id)
+    __result = chain_instance.kyc_chain(aadhaar_front_path, aadhaar_back_path, pan_path, phone_number, db, USER_ID)
     db.close_connection()
 
     if __result:
@@ -134,13 +135,15 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat")
 async def chat(
-    data: ChatRequest
-    # images: list[UploadFile] = File([]),
-    # video: Optional[UploadFile] = File(None)
+    session_id: str = Form(...),
+    user_id: str = Form(...),
+    text: str = Form(None),
+    images: Optional[list[UploadFile]] = File([]),
+    video: Optional[UploadFile] = File(None)
 ):
-    session_id = data.session_id
-    user_id = data.user_id
-    text = data.text
+    session_id = session_id
+    user_id = USER_ID
+    text = text
     # images = data.images
     # video = data.video
     response_data = {
@@ -155,36 +158,36 @@ async def chat(
     db = Database(session_id)
     __user_information = db.get_user_information(email=None, user_id=user_id)
 
-    # # Validate and Save Image
-    # for image in images:
-    #     ext = os.path.splitext(image.filename)[1].lower()
-    #     if ext not in IMAGE_EXTENSIONS:
-    #         raise HTTPException(status_code=400, detail=f"Invalid image format for {image.filename}. Only PNG, JPG, and JPEG are allowed.")
+    # Validate and Save Image
+    for image in images:
+        ext = os.path.splitext(image.filename)[1].lower()
+        if ext not in IMAGE_EXTENSIONS:
+            raise HTTPException(status_code=400, detail=f"Invalid image format for {image.filename}. Only PNG, JPG, and JPEG are allowed.")
         
-    #     image_path = f"{UPLOAD_DIR}/{image.filename}"
-    #     with open(image_path, "wb") as buffer:
-    #         shutil.copyfileobj(image.file, buffer)
-    #     attachments.append(image_path)
+        image_path = f"{UPLOAD_DIR}/{image.filename}"
+        with open(image_path, "wb") as buffer:
+            shutil.copyfileobj(image.file, buffer)
+        attachments.append(image_path)
 
-    # # Validate and Save Video
-    # if video:
-    #     ext = os.path.splitext(video.filename)[1].lower()
-    #     if ext not in VIDEO_EXTENSIONS:
-    #         raise HTTPException(status_code=400, detail="Invalid video format. Only MP4, AVI, and MOV allowed.")
+    # Validate and Save Video
+    if video:
+        ext = os.path.splitext(video.filename)[1].lower()
+        if ext not in VIDEO_EXTENSIONS:
+            raise HTTPException(status_code=400, detail="Invalid video format. Only MP4, AVI, and MOV allowed.")
         
-    #     video_path = f"{UPLOAD_DIR}/{video.filename}"
-    #     with open(video_path, "wb") as buffer:
-    #         shutil.copyfileobj(video.file, buffer)
-    #     reference_img = __user_information["image_path"]
+        video_path = f"{UPLOAD_DIR}/{video.filename}"
+        with open(video_path, "wb") as buffer:
+            shutil.copyfileobj(video.file, buffer)
+        reference_img = __user_information["image_path"]
 
     chain_instance = Chain()
-    # chain_output = chain_instance.chains(attachments, video_path, reference_img)
+    chain_output = chain_instance.chains(attachments, video_path, reference_img)
 
-    # if isinstance(chain_output, tuple):
-    #     approved, attachments = chain_output
-    #     response_data["approved"] = approved
-    # elif isinstance(chain_output, list):
-    #     attachments = chain_output
+    if isinstance(chain_output, tuple):
+        approved, attachments = chain_output
+        response_data["approved"] = approved
+    elif isinstance(chain_output, list):
+        attachments = chain_output
 
     if approved:
         __information = None
