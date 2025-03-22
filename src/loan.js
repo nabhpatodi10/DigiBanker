@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { useNavigate } from "react-router-dom";
 import video1 from "./videos/v1.mp4";
 import video2 from "./videos/v2.mp4";
 import video3 from "./videos/v3.mp4";
@@ -90,7 +91,8 @@ function Loan() {
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
-  const streamRef = useRef(null); // Add a ref to hold the stream
+  const streamRef = useRef(null);
+  const navigate = useNavigate();
 
   const currentQuestion = data.find(item => item.id === stage);
 
@@ -105,9 +107,11 @@ function Loan() {
       setTimeout(() => {
         setIsSubmitting(false);
         alert("Loan application submitted successfully!");
+        navigate("/preview");  // Redirect to /manager
       }, 1500);
     }
   };
+
 
   const handlePrevious = () => {
     if (stage > 1) {

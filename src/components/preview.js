@@ -2,19 +2,19 @@ import React from 'react';
 
 // Dummy data object
 const dummyData = {
-    name: "Jane Doe",
-    age: "32",
-    dob: "15/04/1991",
-    address: "123 Main Street, Mumbai, Maharashtra",
-    aadhaarNumber: "1234 5678 9012",
-    panNumber: "ABCDE1234F",
-    monthlyIncome: "85000",
-    monthlyExpense: "45000",
-    loanAmount: "500000",
-    loanPurpose: "Home Renovation",
-    creditScore: "750",
-    employmentStatus: "Full-time Employee",
-    photograph: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=256&q=80",
+    name: "Nabh Patodi",
+    age: "20",
+    dob: "10/05/2004",
+    address: "84, GUMASTA NAGAR, Indore, Indore, Madhya Pradesh, 452009",
+    aadhaarNumber: "9121 6383 6438",
+    panNumber: "HBOPP3747M",
+    monthlyIncome: "100000",
+    monthlyExpense: "5000",
+    loanAmount: "1000000",
+    loanPurpose: "Education",
+    creditScore: "800",
+    employmentStatus: "Part-time Employee",
+    photograph: "https://iili.io/3zeozdP.png",
     bankStatement: "#"
 };
 
