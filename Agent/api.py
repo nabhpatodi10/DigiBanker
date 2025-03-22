@@ -125,14 +125,24 @@ async def kyc_documents(
     else:
         return {"message": "Invalid documents"}
 
+class ChatRequest(BaseModel):
+    session_id: str
+    user_id: str
+    text: str
+    # images: list[UploadFile] = File([])
+    # video: Optional[UploadFile] = File(None)
+
 @app.post("/chat")
 async def chat(
-    session_id: str,
-    user_id: str,
-    text: Optional[str] = None,
-    images: list[UploadFile] = File([]),
-    video: Optional[UploadFile] = File(None)
+    data: ChatRequest
+    # images: list[UploadFile] = File([]),
+    # video: Optional[UploadFile] = File(None)
 ):
+    session_id = data.session_id
+    user_id = data.user_id
+    text = data.text
+    # images = data.images
+    # video = data.video
     response_data = {
         "session_id": session_id,
         "user_id": user_id,
@@ -145,36 +155,36 @@ async def chat(
     db = Database(session_id)
     __user_information = db.get_user_information(email=None, user_id=user_id)
 
-    # Validate and Save Image
-    for image in images:
-        ext = os.path.splitext(image.filename)[1].lower()
-        if ext not in IMAGE_EXTENSIONS:
-            raise HTTPException(status_code=400, detail=f"Invalid image format for {image.filename}. Only PNG, JPG, and JPEG are allowed.")
+    # # Validate and Save Image
+    # for image in images:
+    #     ext = os.path.splitext(image.filename)[1].lower()
+    #     if ext not in IMAGE_EXTENSIONS:
+    #         raise HTTPException(status_code=400, detail=f"Invalid image format for {image.filename}. Only PNG, JPG, and JPEG are allowed.")
         
-        image_path = f"{UPLOAD_DIR}/{image.filename}"
-        with open(image_path, "wb") as buffer:
-            shutil.copyfileobj(image.file, buffer)
-        attachments.append(image_path)
+    #     image_path = f"{UPLOAD_DIR}/{image.filename}"
+    #     with open(image_path, "wb") as buffer:
+    #         shutil.copyfileobj(image.file, buffer)
+    #     attachments.append(image_path)
 
-    # Validate and Save Video
-    if video:
-        ext = os.path.splitext(video.filename)[1].lower()
-        if ext not in VIDEO_EXTENSIONS:
-            raise HTTPException(status_code=400, detail="Invalid video format. Only MP4, AVI, and MOV allowed.")
+    # # Validate and Save Video
+    # if video:
+    #     ext = os.path.splitext(video.filename)[1].lower()
+    #     if ext not in VIDEO_EXTENSIONS:
+    #         raise HTTPException(status_code=400, detail="Invalid video format. Only MP4, AVI, and MOV allowed.")
         
-        video_path = f"{UPLOAD_DIR}/{video.filename}"
-        with open(video_path, "wb") as buffer:
-            shutil.copyfileobj(video.file, buffer)
-        reference_img = __user_information["image_path"]
+    #     video_path = f"{UPLOAD_DIR}/{video.filename}"
+    #     with open(video_path, "wb") as buffer:
+    #         shutil.copyfileobj(video.file, buffer)
+    #     reference_img = __user_information["image_path"]
 
     chain_instance = Chain()
-    chain_output = chain_instance.chains(attachments, video_path, reference_img)
+    # chain_output = chain_instance.chains(attachments, video_path, reference_img)
 
-    if isinstance(chain_output, tuple):
-        approved, attachments = chain_output
-        response_data["approved"] = approved
-    elif isinstance(chain_output, list):
-        attachments = chain_output
+    # if isinstance(chain_output, tuple):
+    #     approved, attachments = chain_output
+    #     response_data["approved"] = approved
+    # elif isinstance(chain_output, list):
+    #     attachments = chain_output
 
     if approved:
         __information = None
