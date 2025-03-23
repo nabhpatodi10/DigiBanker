@@ -46,24 +46,7 @@ npm install
 npm run start
 ```
 
-### KYC Backend Setup
-
-```bash
-# Navigate to backend directory
-cd digibanker/backend
-
-# Create and activate virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the API server
-python app.py
-```
-
-### Branch Manager Agent Backend Setup
+### Backend Setup
 
 ```bash
 # Navigate to the Agent Directory
@@ -89,6 +72,7 @@ The application uses a microservices architecture:
 - Video Processing: OpenCV
 - LLMs Used: Google Gemini, OpenAI GPT 4o mini
 - Database: MongoDB
+- Loan Classification Models: Logistic Regression, Random Forest, SVC, XG Boost
 
 ## Developed By ⚙️
 
