@@ -190,7 +190,7 @@ export default function DigiBankerManager() {
     try {
       const response = await axios.post("http://127.0.0.1:5000/chat", formData, {
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "multipart/form-data",
         },
       });
   
